@@ -1,5 +1,6 @@
 import requests
 import os
+import json
 
 def makeHead(cookie):
     return {
@@ -19,7 +20,7 @@ def punch(cookie):
     url = "https://www.luogu.com.cn/index/ajax_punch"  # 已修正多余空格
     response = requests.get(url, headers=makeHead(cookie))
     response.encoding = 'utf-8'
-    return response.text
+    return json.loads(response.text)
 
 if __name__ == "__main__":
     uid = os.getenv('LUOGU_UID')
