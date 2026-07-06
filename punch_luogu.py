@@ -20,7 +20,11 @@ def punch(cookie):
     url = "https://www.luogu.com.cn/index/ajax_punch"  # 已修正多余空格
     response = requests.get(url, headers=makeHead(cookie))
     response.encoding = 'utf-8'
-    return json.loads(response.text)
+    # 使用 try-except 捕获 JSON 解析错误
+    try:
+        return json.loads(response.text)
+    except json.JSONDecodeError:
+        return response.text
 
 if __name__ == "__main__":
     uid = os.getenv('LUOGU_UID')
