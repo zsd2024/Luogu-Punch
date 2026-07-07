@@ -1,28 +1,34 @@
-import requests
 import os
 import json
+from curl_cffi import requests as cffi_requests  # 👈 替换为 curl_cffi
 
 def makeHead(cookie):
     return {
-        "Host": "www.luogu.com.cn",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:73.0) Gecko/20100101 Firefox/73.0",
-        "Accept": "*/*",
-        "Accept-Language": "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2",
-        "Accept-Encoding": "identity",  # 👈 关键：禁止服务器压缩响应
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+        "Referer": "https://www.luogu.com.cn/",
         "Connection": "keep-alive",
-        "Referer": "https://www.luogu.com.cn/",  # 已修正多余空格
-        "Cache-Control": "no-cache",
-        "TE": "Trailers",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
+        "TE": "trailers",
         "Cookie": cookie
     }
 
 def punch(cookie):
-    url = "https://www.luogu.com.cn/index/ajax_punch"  # 已修正多余空格
-    response = requests.get(url, headers=makeHead(cookie))
+    url = "https://www.luogu.com.cn/index/ajax_punch"
+    
+    # 👇 关键：impersonate="chrome" 会模拟真实 Chrome 的 TLS/HTTP2 指纹
+    # 同时自动设置正确的 User-Agent，无需手动指定
+    response = cffi_requests.get(
+        url,
+        headers=makeHead(cookie),
+        impersonate="chrome124"  # 模拟 Chrome 124 的完整指纹
+    )
     response.encoding = 'utf-8'
-    # 使用 try-except 捕获 JSON 解析错误
+    
     try:
-        return json.loads(response.text)
+        return response.json()
     except json.JSONDecodeError:
         return response.text
 
@@ -30,10 +36,11 @@ if __name__ == "__main__":
     uid = os.getenv('LUOGU_UID')
     client_id = os.getenv('LUOGU_CLIENT_ID')
     c3vk = os.getenv('LUOGU_C3VK')
+    
     if not all([uid, client_id, c3vk]):
         print("错误：请设置环境变量 LUOGU_UID、LUOGU_CLIENT_ID 和 LUOGU_C3VK")
         exit(1)
 
-    cookie = f"__client_id={client_id}; _uid={uid}; _C3VK={c3vk};"
+    cookie = f"__client_id={client_id}; _uid={uid}; _C3VK={c3vk}"
     result = punch(cookie)
     print(result)
